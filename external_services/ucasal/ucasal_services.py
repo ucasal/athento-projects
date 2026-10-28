@@ -1,0 +1,167 @@
+from file.models import File
+import io
+import requests
+from core.exceptions import AthentoseError
+from custom.sp_libs.python.logging import SpLogger
+from base64 import b64encode
+from custom.ucasal2.utils import UcasalConfig
+from custom.ucasal2.model.exceptions.invalid_otp_error import InvalidOtpError
+class UcasalServices:
+    logger = SpLogger("athentose", "UcasalServices")
+
+    #TODO: setear "VERIFY_CERTIFICATE = True" cuando quede productivo 
+    VERIFY_CERTIFICATE = False
+    
+    @classmethod
+    def get_auth_token(cls, user:str, password:str)->str: #all_place
+        logger = cls.logger
+        logger.entry()
+        endpoint = UcasalConfig.token_svc_url()
+        data = f'usuario={user}&clave={password}'
+        
+        headers ={'Content-Type': 'application/x-www-form-urlencoded'}  
+        logger.entry("Llamando a requests.post con estos parámetros: %s" % str({'url':endpoint, 'data': data, 'headers':headers}))
+
+        response = requests.post(url=endpoint, data=data, headers=headers)
+
+        if response.status_code == requests.codes.ok:
+            return logger.exit(response.text.strip())
+        else:
+            body_text = response.text[:500] if response.text else 'N/A'
+            error_msg = "Error obteniendo token - Status: " + str(response.status_code) + ", Reason: " + str(response.reason) + ", Body: " + body_text
+            logger.error(error_msg)
+            raise AthentoseError(error_msg)  
+            
+    @classmethod
+    def get_qr_image(cls, url:str)->io.BytesIO: #all_place
+        logger = cls.logger
+        logger.entry(f"Generando QR para URL: {url}")
+        endpoint = f"{UcasalConfig.qr_svc_url()}?b64={b64encode(url.encode('utf-8')).decode('utf-8')}"
+        headers = {}
+        logger.debug("Llamando a requests.get con estos parámetros: %s" % str({'url':endpoint, 'headers':headers}))
+        response = requests.get(url=endpoint)
+
+        if response.status_code == requests.codes.ok:
+            return logger.exit(response.content)
+        else:
+            raise logger.exit(AthentoseError('Error inesperado obteniendo imagen QR: ' + response.reason), exc_info=True)   
+    
+    @classmethod
+    def get_short_url(cls, auth_token:str, url:str)->str: #all_place
+        #TODO: consultar servicio de UCASAL
+        logger = cls.logger
+        logger.entry()
+        endpoint = UcasalConfig.shorten_url_svc_url()
+        headers = {'Authorization': f'Bearer {auth_token}'}
+        json = {
+          'url': url,
+          'entorno': UcasalConfig.shorten_url_svc_env() if UcasalConfig.shorten_url_svc_env() else 'produccion'
+        }
+
+        logger.debug("Llamando a requests.post con estos parámetros: %s" % str({'url':endpoint, 'json': json, 'headers':headers}))
+        response = requests.post(url=endpoint, headers=headers, json=json, verify=cls.VERIFY_CERTIFICATE)
+
+        logger.debug(f'response.status_code: {response.status_code}')
+        logger.debug(f'response.text: {response.text}')
+
+        if response.status_code in [200, 201]:
+            try:
+                return logger.exit(response.json()['url_corta'])
+            except Exception as json_err:
+                error_msg = "Error parseando respuesta JSON de short_url: " + str(json_err) + " - Response: " + response.text[:500]
+                logger.error(error_msg)
+                raise AthentoseError(error_msg)
+        else:
+            error_msg = "Error obteniendo url corta - Status: " + str(response.status_code) + ", Reason: " + str(response.reason) + ", Body: " + (response.text[:500] if response.text else 'N/A')
+            logger.error(error_msg)
+            raise AthentoseError(error_msg)   
+
+
+    @classmethod
+    def register_in_blockchain(cls, auth_token:str, hash:str, file_uuid:str, callback_url:str)->str: #firma_programas
+        import logging
+        nlogger = logging.getLogger("athentose")
+
+        nlogger.debug("nlogger - Enter register_in_blockchain")
+
+
+        #logger = cls.logger
+        logger.entry()
+        #TODO: validar parámetros
+                
+        endpoint = UcasalConfig.stamps_svc_url()
+        headers = {'Authorization': f'Bearer {auth_token}'}
+        #TODO: y el file_uuid, no se envía?
+        data = {
+            'fileHash': hash,
+            'callbackUrl': callback_url
+        }
+
+
+        request_info = str({'url':endpoint, 'json':data, 'headers':headers})
+        
+        logger.debug(f"Llamando a requests.post con estos parametros: {request_info}")
+        
+        response = requests.post(url=endpoint, json=data, headers=headers)
+
+        rta = str(response.text)
+        logger.debug(f"Respuesta del servicio: {rta}")
+
+        if response.status_code == requests.codes.ok:
+            return logger.exit(response.text)
+            #TODO: Manejar response?
+        else:
+            raise logger.exit(AthentoseError('Error inesperado registrando el hash en UCASAL/BFA: ' + response.reason), exc_info=True) 
+
+    @classmethod
+    def notify_rejection(cls, auth_token:str, uuid:str, previous_uuid:str, reason:str)->str: #plataforma 
+        logger = cls.logger
+        logger.entry()
+        endpoint = f'{UcasalConfig.change_acta_svc_url()}/{uuid}'
+        headers = {'Authorization': f'Bearer {auth_token}'}
+        data = {'estado': 1, 'motivo': reason, 'previous_uuid': previous_uuid}
+        
+        logger.debug("Llamando a requests.patch con estos parámetros: %s" % str({'url':endpoint, 'headers':headers,  'json':data}))
+        response = requests.patch(url=endpoint, headers=headers, json=data)
+
+        if response.status_code == requests.codes.ok:
+            return logger.exit(response.text)
+        else:
+            raise logger.exit(AthentoseError('Error inesperado notificando rechazo del acta: ' + response.reason), exc_info=True)   
+
+    @classmethod
+    def notify_blockchain_success(cls, auth_token:str, uuid:str)->str:
+        logger = cls.logger
+        logger.entry()
+        endpoint = f'{UcasalConfig.change_acta_svc_url()}/{uuid}'
+        headers = {'Authorization': f'Bearer {auth_token}'}
+        data = {'estado': 5}
+        
+        logger.debug("Llamando a requests.patch con estos parámetros: %s" % str({'url':endpoint, 'headers':headers,  'json':data}))
+        response = requests.patch(url=endpoint, headers=headers, json={'estado': 5})
+
+        if response.status_code == requests.codes.ok:
+            return logger.exit(response.text)
+        else:
+            raise logger.exit(AthentoseError('Error inesperado notificando éxito registrando el acta en blockchain: ' + response.reason), exc_info=True)   
+    
+    @classmethod
+    def validate_otp(cls, user:str, otp:int): #all_place
+        logger = cls.logger
+        logger.entry()
+        
+        endpoint = UcasalConfig.otp_validation_url_template().format(usuario=user, token=otp)
+        logger.debug(f"Endpoint: {endpoint}")
+        headers = {}
+        
+        logger.debug("Llamando a requests.get con estos parámetros: %s" % str({'url':endpoint, 'headers':headers}))
+        
+        response = requests.get(url=endpoint, headers=headers)
+
+        if response.status_code == requests.codes.ok:
+            return logger.exit() #OK
+        if response.status_code == requests.codes.unauthorized:
+            raise logger.exit(InvalidOtpError('El código OTP es inválido o ha expirado. Por favor, genere uno nuevo.'))
+        else:
+            raise logger.exit(AthentoseError(f'Error inesperado validadando el código OTP: HTTP code: {response.status_code}. HTTP body {response.text}'), exc_info=True)   
+        
