@@ -6,9 +6,7 @@ from django.utils.translation import gettext as _
 from django.http import HttpResponse
 from custom.sp_libs.python.logging import SpLogger, SpFeatureLogger, NullSpFeatureLogger
 from file.foperations import op_send_by_email
-from django_currentuser.middleware import get_current_user
-from custom.ucasal2.external_services.ucasal.ucasal_services import UcasalServices
-from custom.ucasal2.utils import ProgramasStates, is_digit
+from custom.ucasal2.utils import ProgramasStates
 from datetime import datetime
 import pytz
 import requests
@@ -24,6 +22,7 @@ class RechazaPrograma(DocumentOperation):
     AREA_BY_STATE = {
         ProgramasStates.pendiente_validacion_doc: "Pendiente de Validación Docente",
         ProgramasStates.pendiente_firma_otp: "Pendiente de Firma OTP",
+        ProgramasStates.pendiente_firma_jc: "Pendiente Firma Jefe de Carrera",
     }
 
     def execute(self, *args, **kwargs):
@@ -54,13 +53,6 @@ class RechazaPrograma(DocumentOperation):
                 raise AthentoseError("Debe ingresar un motivo de rechazo para continuar.")
 
 
-            usuario = get_current_user()
-            if not usuario or not getattr(usuario, "is_authenticated", False):
-                flogger.entry("No hay un usuario autenticado para rechazar el programa")
-                raise AthentoseError("No hay un usuario autenticado para rechazar el programa")
-            mail_sg = usuario.email or ""
-
-            UcasalServices.validate_otp(user=mail_sg, otp=otp)
 
             # 3. Persistir motivo y cambiar estado a RECHAZADO
             fil.set_metadata(
@@ -71,7 +63,7 @@ class RechazaPrograma(DocumentOperation):
             fil.set_metadata("estado", ProgramasStates.rechazado, overwrite=True)
 
             if fil.life_cycle_state:
-                fil.change_life_cycle_state(ProgramasStates.rechazado)
+                fil.change_life_cycle_state(ProgramasStates.rechazado, force_transition=True)
 
             # 4. Notificar rechazo a UCASAL
             try:
@@ -91,11 +83,27 @@ class RechazaPrograma(DocumentOperation):
             fil.set_metadata("metadata.programas_fecha_rechazo", date_str, overwrite=True)
 
             flogger.debug("Programa rechazado exitosamente")
+            flogger.debug("ultima actualizacion")
+            fil.set_feature("debug xxx ", "xxx", overwrite=True)
+
+            #delete programa
+            url_api = UcasalConfig.get_url_api().replace(
+                "{{uuid}}", uuid
+            )
+            headers ={'Content-Type': 'application/x-www-form-urlencoded'}
+            user = UcasalConfig.get_user()
+            password = UcasalConfig.get_password()
+            data = f'usuario={user}&clave={password}' 
+            response = requests.delete(url=url_api, data=data, headers=headers)
+
+            #envia a la papelera
+            fil.removed = True
+            fil.save()
 
             op_send_by_email.run(
                 uuid,
-                notifications_template="titulos_notificacion_rechazo",
-                send_to_groups="TITULOS",
+                notifications_template="programas_notificacion_rechazo",
+                send_to_groups="Jefe de Carrera",
                 area=area,
             )
             return logger.exit(HttpResponse("Programa rechazado exitosamente"))

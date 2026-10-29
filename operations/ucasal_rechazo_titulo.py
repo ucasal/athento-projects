@@ -11,6 +11,10 @@ from custom.ucasal2.utils  import TituloStates
 from datetime import datetime
 import pytz
 import requests
+from custom.ucasal2.external_services.ucasal.ucasal_services import UcasalServices
+from custom.ucasal2.utils import UcasalConfig
+from custom.ucasal2.utils import is_digit
+from django_currentuser.middleware import get_current_user
 
 class RechazaTitulo(DocumentOperation):
     version = "1.0"
@@ -46,17 +50,28 @@ class RechazaTitulo(DocumentOperation):
             motivo = str(motivo).strip()
 
             if (motivo == ""):                
-                raise AthentoseError("Debe ingresar un motivo de rechazo para continuar.")
-            
+                raise AthentoseError("Debe ingresar un motivo de rechazo para continuar.")            
+        
+            # 2.b Leer y validar OTP
+            otp_str = str(fil.gmv("metadata.titulo_otp") or "").strip()
+            if otp_str == "":
+                raise AthentoseError("El OTP no puede ser nulo, ingrese un valor válido")
+            if not is_digit(otp_str):
+                raise AthentoseError(
+                    _("'OTP' debe ser un número entero positivo en lugar de '%(otp)s'")
+                    % {"otp": otp_str}
+                )
+            otp = int(otp_str)
 
             usuario = get_current_user()
             if not usuario or not getattr(usuario, "is_authenticated", False):
-                flogger.entry("No hay un usuario autenticado para firmar el título")
-                raise AthentoseError("No hay un usuario autenticado para firmar el título")
+                raise AthentoseError("No hay un usuario autenticado para rechazar el título")
             mail_sg = usuario.email or ""
+            if not mail_sg:
+                raise AthentoseError("No se pudo obtener el mail del usuario autenticado")
 
-            UcasalServices.validate_otp(user=mail_sg, otp=otp_str)
-         
+            UcasalServices.validate_otp(user=mail_sg, otp=otp)
+            fil.set_metadata("metadata.titulo_otp", "", overwrite=True)
 
             # 3. Actualizar metadatos de rechazo / firma
             fil.set_metadata(
@@ -104,7 +119,10 @@ class RechazaTitulo(DocumentOperation):
                     send_to_groups="TITULOS",
                     area=area,
                 )    
-            return logger.exit(HttpResponse("Título rechazado exitosamente"))
+            return logger.exit({
+                            "msg_type": "success",
+                            "msg": "Título rechazado exitosamente",
+                     })
 
         except AthentoseError as e:
             flogger.error(f"Error rechazando el título: {e}")

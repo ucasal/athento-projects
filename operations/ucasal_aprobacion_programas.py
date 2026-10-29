@@ -38,37 +38,20 @@ class ApruebaProgramas(DocumentOperation):
           
             flogger.entry(f"Response: {estado_meta} ")
 
-            if estado_meta == ProgramasStates.pendiente_validacion_doc:
-                
-                otp_str = str(fil.gmv("metadata.programas_otp") or "").strip()
-                if otp_str == "":
-                    flogger.entry("El OTP no puede ser nulo, ingrese un valor válido")
-                    raise AthentoseError("El OTP no puede ser nulo, ingrese un valor válido")
-                if not is_digit(otp_str):
-                    flogger.entry(f"'OTP' debe ser un número entero positivo en lugar de '{otp_str}'")
-                    raise AthentoseError(
-                        _("'OTP' debe ser un número entero positivo en lugar de '%(otp)s'")
-                        % {"otp": otp_str}
-                    )
+            if estado_meta == ProgramasStates.pendiente_firma_jc:
+                flogger.entry("El programa ya fue aprobado por el docente")
+                return
 
-                otp = int(otp_str)
+            if estado_meta == ProgramasStates.pendiente_validacion_doc:              
 
-                usuario = get_current_user()
-                if not usuario or not getattr(usuario, "is_authenticated", False):
-                    flogger.entry("No hay un usuario autenticado para firmar el programa")
-                    raise AthentoseError("No hay un usuario autenticado para firmar el programa")
-                mail_sg = usuario.email or ""
-
-                UcasalServices.validate_otp(user=mail_sg, otp=otp)
-
-                nuevo_estado = ProgramasStates.pendiente_firma_otp
+                nuevo_estado = ProgramasStates.pendiente_firma_jc
                 fil.set_metadata("estado", nuevo_estado, overwrite=True)
                 if fil.life_cycle_state:
                     fil.change_life_cycle_state(nuevo_estado)
 
                 op_send_by_email.run(
                     uuid,
-                    notifications_template='titulos_notificacion_validacion',
+                    notifications_template='programas_notificacion_validacion',
                     send_to_groups='Docentes',
                     area='Docentes'
                 )    
@@ -94,7 +77,10 @@ class ApruebaProgramas(DocumentOperation):
         except AthentoseError as e:
             flogger.error(f"Error en la operación de aprobación de programas: {e}")
             return logger.exit(
-                HttpResponse(str(e), status=400),
+                {
+                    "msg_type": "error",
+                    "msg": f"Error en el proceso de aprobar el título: {e}",
+                },
                 exc_info=True,
             )
         except Exception as e:  # noqa: BLE001

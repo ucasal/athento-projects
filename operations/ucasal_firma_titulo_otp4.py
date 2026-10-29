@@ -28,12 +28,12 @@ import locale
 import requests
 
 
-class FirmaTituloOTP(DocumentOperation):
+class FirmaTituloOTP4(DocumentOperation):
     """Firma analítico y diploma de un título con OTP y QR, y los registra en blockchain.
 
     Flujo esperado:
       - El título padre debe estar en estado TituloStates.pendiente_firma_otp
-        (la transición hacia ese estado la hace la operación IniciaFirmaTituloOTP,
+        (la transición hacia ese estado la hace la operación IniciaFirmaTituloOTP4,
         no esta operación).
       - El OTP se ingresa en un metadato del título (metadata.titulo_otp) y se
         valida contra el servicio de OTP de UCASAL.
@@ -42,13 +42,13 @@ class FirmaTituloOTP(DocumentOperation):
       - El título pasa a estado TituloStates.firmado.
     """
 
-    version = "1.0"
-    name = _("FirmaTituloOTP")
+    version = "1.1"
+    name = _("FirmaTituloOTP4")
     description = _(
         "Firma analítico y diploma de un título con OTP y QR, y los registra en blockchain"
     )
     configuration_parameters = {}
-    _logger: SpLogger = SpLogger("athentose", "FirmaTituloOTP")
+    _logger: SpLogger = SpLogger("athentose", "FirmaTituloOTP4")
     
 
     def execute(self, *args, **kwargs):  # noqa: D401
@@ -67,28 +67,21 @@ class FirmaTituloOTP(DocumentOperation):
             flogger.debug(f"Estado lifecycle: {lifecycle_state}")
 
             # 1) Validar estado del título padre.
-            # La transición hacia 'pendiente_firma_otp' la hace IniciaFirmaTituloOTP;
+            # La transición hacia 'pendiente_firma_otp' la hace IniciaFirmaTituloOTP4;
             # acá solo verificamos que efectivamente esté en ese estado antes de firmar.            
 
             # 1.b) Leer y validar OTP (metadato del título)
-            try:
-                otp_str = str(fil_padre.gmv("metadata.titulo_otp") or "").strip()
-                if otp_str == "":
-                    flogger.entry("El OTP no puede ser nulo, ingrese un valor válido")
-                    raise AthentoseError("El OTP no puede ser nulo, ingrese un valor válido")
-                if not is_digit(otp_str):
-                    flogger.entry(f"'OTP' debe ser un número entero positivo en lugar de '{otp_str}'")
-                    raise AthentoseError(
-                        _("'OTP' debe ser un número entero positivo en lugar de '%(otp)s'")
-                        % {"otp": otp_str}
-                    )
-                otp = int(otp_str)
-            except AthentoseError as e:
-                flogger.error(f"Error en la aprobación de título 1: {e}")
-                return logger.exit(
-                    HttpResponse(str(e), status=400),
-                    exc_info=True,
-            )    
+            otp_str = str(fil_padre.gmv("metadata.titulo_otp") or "").strip()
+            if otp_str == "":
+                flogger.entry("El OTP no puede ser nulo, ingrese un valor válido")
+                raise AthentoseError("El OTP no puede ser nulo, ingrese un valor válido")
+            if not is_digit(otp_str):
+                flogger.entry(f"'OTP' debe ser un número entero positivo en lugar de '{otp_str}'")
+                raise AthentoseError(
+                    _("'OTP' debe ser un número entero positivo en lugar de '%(otp)s'")
+                    % {"otp": otp_str}
+                )
+            otp = int(otp_str)
 
             # 1.c) Usuario firmante (Secretaría General)
             flogger.entry("Validando usuario firmante...")
@@ -119,6 +112,7 @@ class FirmaTituloOTP(DocumentOperation):
             # responder ahí, es un problema del servicio/ambiente -conviene
             # mockearlo en desa- y no debería resolverse comentando la
             # validación en el código que va a producción.
+
             UcasalServices.validate_otp(user=mail_sg, otp=otp)
             fil_padre.set_feature("valide_otp", "1")
 
@@ -142,10 +136,21 @@ class FirmaTituloOTP(DocumentOperation):
             url_to_shorten = UcasalConfig.titulo_validation_url_template().replace(
                 "{{uuid}}", uuid_padre
             )
+
+            url_to_shorten_analitico = UcasalConfig.titulo_validation_url_template().replace(
+                "{{uuid}}", uuid_padre
+            )
+            url_to_shorten_analitico = url_to_shorten_analitico.replace(
+                "titulo", "analitico"
+            )
+            
             flogger.entry(f"Obteniendo short_url para: {url_to_shorten}")
             try:
                 short_url = UcasalServices.get_short_url(
                     auth_token=auth_token, url=url_to_shorten
+                )
+                short_url_analitico = UcasalServices.get_short_url(
+                    auth_token=auth_token, url=url_to_shorten_analitico
                 )
             except Exception as url_err:
                 flogger.entry(f"Error al obtener short_url: {str(url_err)}")
@@ -154,10 +159,12 @@ class FirmaTituloOTP(DocumentOperation):
             flogger.entry(f"Obteniendo QR para: {short_url}")
             try:
                 qr_stream = UcasalServices.get_qr_image(url=short_url)
+                qr_stream_analitico = UcasalServices.get_qr_image(url=short_url_analitico)
             except Exception as qr_err:
                 flogger.entry(f"Error al obtener QR: {str(qr_err)}")
                 raise
-            b64_qr = base64.b64encode(qr_stream).decode("utf-8")
+            b64_qr = base64.b64encode(qr_stream).decode("utf-8")    
+            b64_qr_analitico = base64.b64encode(qr_stream_analitico).decode("utf-8")              
 
             # 2.b) Datos textuales de la firma
             mail_sg_ofuscado = get_mail_for_otp(mail_sg)
@@ -221,6 +228,9 @@ class FirmaTituloOTP(DocumentOperation):
             documentos_firmados = []
 
             fil_padre.change_life_cycle_state(TituloStates.pendiente_firma_otp, force_transition=True)
+            fil_padre.change_life_cycle_state(TituloStates.pendiente_blockchain, force_transition=True)
+            fil_padre.change_life_cycle_state(TituloStates.firmado, force_transition=True)
+
 
             # 4) Firmar ambos PDFs con el mismo QR/OTP
             logger.entry("Firmando documentos con QR/OTP")
@@ -236,10 +246,12 @@ class FirmaTituloOTP(DocumentOperation):
 
                 qr_image_tmp_path = f"/var/www/athentose/media/tmp/ucasal_titulo_qr_{hijo.uuid}.png"
                 os.makedirs(os.path.dirname(qr_image_tmp_path), exist_ok=True)
-                with open(qr_image_tmp_path, "wb") as qr_file:
-                    qr_file.write(qr_stream)
+                
 
                 if(hijo == hijo_analitico):
+                    with open(qr_image_tmp_path, "wb") as qr_file:
+                        qr_file.write(qr_stream_analitico)
+
                     qr_info = QRInfo(
                         image_path=qr_image_tmp_path,
                         image_text=qr_text,
@@ -248,7 +260,10 @@ class FirmaTituloOTP(DocumentOperation):
                         width=40,
                         height=40,
                     )
-                else:                    
+                else:
+                    with open(qr_image_tmp_path, "wb") as qr_file:
+                        qr_file.write(qr_stream)     
+
                     qr_info = QRInfo(
                         image_path=qr_image_tmp_path,
                         image_text=qr_text,
@@ -284,7 +299,9 @@ class FirmaTituloOTP(DocumentOperation):
             # 5) Registrar hashes de analítico y diploma en blockchain
             logger.entry("Registrando hashes de analítico y diploma en blockchain")
             hash_analitico = get_pdf_hash(hijo_analitico)
+            logger.entry(f"Hash analítico: {hash_analitico}")
             hash_diploma = get_pdf_hash(hijo_diploma)
+            logger.entry(f"Hash diploma: {hash_diploma}")
 
             registrada_en_blockchain = fil_padre.gfv("registro_blockchain")
             ok_analitico = fil_padre.gfv("ucasal.svc.ok_response_analitico")
@@ -315,10 +332,12 @@ class FirmaTituloOTP(DocumentOperation):
                     "Estado 'pending' inconsistente; se resetea para reintentar."
                 )
 
+            
             if not saltear_registro_blockchain:
-                callback_url = TitulosServices.set_callback_url(uuid=uuid_padre)
-                logger.entry(f"Callback URL: {callback_url} - UUID: {uuid_padre} - Hash analítico: {hash_analitico}")
-
+                                
+                callback_url = ""
+                callback_url = TitulosServices.set_callback_url(uuid=str(hijo_analitico.uuid))
+     
                 ok_response_analitico = UcasalServices.register_in_blockchain(
                     auth_token=auth_token,
                     hash=hash_analitico,
@@ -331,6 +350,8 @@ class FirmaTituloOTP(DocumentOperation):
 
                 logger.entry(f"Hash diploma: {hash_diploma}")
 
+                callback_url = ""
+                callback_url = TitulosServices.set_callback_url(uuid=str(hijo_diploma.uuid))
                 ok_response_diploma = UcasalServices.register_in_blockchain(
                     auth_token=auth_token,
                     hash=hash_diploma,
@@ -346,12 +367,8 @@ class FirmaTituloOTP(DocumentOperation):
             fil_padre.set_feature("hash_analitico", hash_analitico)
             fil_padre.set_feature("hash_diploma", hash_diploma)
 
-            fil_padre.change_life_cycle_state(TituloStates.pendiente_blockchain, force_transition=True)
-            if("Pendiente de validacion FSG (secretaria general)" == fil_padre.life_cycle_state.name):
-                nuevo_estado = "Pendiente de Blockchain"
-                fil_padre.change_life_cycle_state(nuevo_estado, force_transition=True)
-                flogger.entry(f"Estado cambiado a '{nuevo_estado}'")
-
+            #fil_padre.change_life_cycle_state(TituloStates.pendiente_blockchain, force_transition=True)
+            
             fil_padre.set_metadata(
                 "estado",
                 TituloStates.pendiente_blockchain,
@@ -378,11 +395,8 @@ class FirmaTituloOTP(DocumentOperation):
                     f"No se pudo notificar el estado firmado a UCASAL: {notif_err}"
                 )
 
-            fil_padre.change_life_cycle_state(TituloStates.firmado, force_transition=True)
-            if("Pendiente de Blockchain" == fil_padre.life_cycle_state.name):
-                nuevo_estado = "Firmado"
-                fil_padre.change_life_cycle_state(nuevo_estado, force_transition=True)
-                flogger.entry(f"Estado cambiado a '{nuevo_estado}'")
+            #fil_padre.change_life_cycle_state(TituloStates.firmado, force_transition=True)
+            
 
             fil_padre.set_metadata("estado", TituloStates.firmado, overwrite=True)
             fil_padre.set_feature("registro_blockchain", "success")
@@ -417,7 +431,10 @@ class FirmaTituloOTP(DocumentOperation):
             flogger.error(error_msg)
             logger.error(error_msg)
             return logger.exit(
-                HttpResponse(str(e), status=400),
+                {
+                    "msg_type": "error",
+                    "msg": f"Error en la operación de firma de título OTP: {str(e)}",
+                },
                 exc_info=True,
             )
         except Exception as e:  # noqa: BLE001
@@ -430,17 +447,17 @@ class FirmaTituloOTP(DocumentOperation):
             )
 
 
-VERSION = FirmaTituloOTP.version
-NAME = FirmaTituloOTP.name
-DESCRIPTION = FirmaTituloOTP.description
+VERSION = FirmaTituloOTP4.version
+NAME = FirmaTituloOTP4.name
+DESCRIPTION = FirmaTituloOTP4.description
 ORDER = 100
 CATEGORY = ""
 POSTLOAD = False
 POSTCHARACT = False
 POSTCLASSIF = False
 POSTEXTRACTION = False
-CONFIGURATION_PARAMETERS = FirmaTituloOTP.configuration_parameters
+CONFIGURATION_PARAMETERS = FirmaTituloOTP4.configuration_parameters
 
 
 def run(uuid=None, **params):
-    return FirmaTituloOTP(uuid, **params).run()
+    return FirmaTituloOTP4(uuid, **params).run()

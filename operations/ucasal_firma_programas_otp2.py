@@ -28,7 +28,7 @@ import requests
 
 
 
-class FirmaProgramaOTP(DocumentOperation):
+class FirmaProgramaOTP2(DocumentOperation):
     """Firma el PDF de un programa con OTP y QR, y lo registra en blockchain.
 
     Flujo esperado:
@@ -75,6 +75,7 @@ class FirmaProgramaOTP(DocumentOperation):
 
             # 1.b) Leer y validar OTP (metadato del título)
             otp_str = str(fil.gmv("metadata.programas_otp") or "").strip()
+            flogger.entry(f"OTP leído: {otp_str}")
             if otp_str == "":
                 flogger.entry("El OTP no puede ser nulo, ingrese un valor válido")
                 raise AthentoseError("El OTP no puede ser nulo, ingrese un valor válido")
@@ -249,13 +250,13 @@ class FirmaProgramaOTP(DocumentOperation):
             callback_url = ProgramasServices.get_callback_url(uuid=uuid)
             logger.entry(f"Callback URL: {callback_url} - UUID: {uuid} - Hash: {hash_programa}")
 
-            #ok_response = UcasalServices.register_in_blockchain(
-            #    auth_token=auth_token,
-            #    hash=hash_programa,
-            #    file_uuid=uuid,
-            #   callback_url=callback_url,
-            #)
-            #fil.set_feature("ucasal.svc.ok_response_programa", ok_response)
+            ok_response = UcasalServices.register_in_blockchain(
+                auth_token=auth_token,
+                hash=hash_programa,
+                file_uuid=uuid,
+               callback_url=callback_url,
+            )
+            fil.set_feature("ucasal.svc.ok_response_programa", ok_response)
 
             logger.entry(f"Token: {auth_token}" + f" - Hash: {hash_programa}")
 
@@ -279,25 +280,15 @@ class FirmaProgramaOTP(DocumentOperation):
                 overwrite=True,
             )
             flogger.entry("Enviando notificación de actualización de estado a UCASAL")
-            try:
-                #posible error en el micro
-                response = requests.post(
-                    UcasalConfig.programas_approve_url(),
-                    json={"status": "5", "uuid": uuid},
-                    verify=False,
-                    timeout=30,
-                )
-                response.raise_for_status()
-                flogger.entry(
-                    f"Actualizacion estado firmada UCASAL - Status: {response.status_code}, Response: {response.text[:200]}"
-                )
-            except Exception as notif_err:
-                flogger.entry(
-                    f"Error al Actualizacion estado firmada a UCASAL: {str(notif_err)}"
-                )
-                raise AthentoseError(
-                    f"No se pudo notificar el estado firmado a UCASAL: {notif_err}"
-                )
+
+            area = self.AREA_BY_STATE[estado_meta]
+            op_send_by_email.run(
+                uuid,
+                notifications_template="programas_notificacion_firmada",
+                send_to_groups="Jefe de Carrera",
+                area=area,
+            )            
+                        
 
             fil.change_life_cycle_state(ProgramasStates.firmado, force_transition=True)
             fil.set_metadata("estado", ProgramasStates.firmado, overwrite=True)
@@ -331,7 +322,10 @@ class FirmaProgramaOTP(DocumentOperation):
             flogger.error(error_msg)
             logger.error(error_msg)
             return logger.exit(
-                HttpResponse(str(e), status=400),
+                {
+                    "msg_type": "error",
+                    "msg": f"Error en la operación de firma de programa OTP: {str(e)}",
+                },
                 exc_info=True,
             )
         except Exception as e:  # noqa: BLE001
@@ -339,22 +333,25 @@ class FirmaProgramaOTP(DocumentOperation):
             flogger.error(error_msg)
             logger.error(error_msg)
             return logger.exit(
-                HttpResponse(str(e), status=500),
+                {
+                    "msg_type": "error",
+                    "msg": f"Error inesperado en la operación de firma de programa OTP: {str(e)}",
+                },
                 exc_info=True,
             )
 
 
-VERSION = FirmaProgramaOTP.version
-NAME = FirmaProgramaOTP.name
-DESCRIPTION = FirmaProgramaOTP.description
+VERSION = FirmaProgramaOTP2.version
+NAME = FirmaProgramaOTP2.name
+DESCRIPTION = FirmaProgramaOTP2.description
 ORDER = 100
 CATEGORY = ""
 POSTLOAD = False
 POSTCHARACT = False
 POSTCLASSIF = False
 POSTEXTRACTION = False
-CONFIGURATION_PARAMETERS = FirmaProgramaOTP.configuration_parameters
+CONFIGURATION_PARAMETERS = FirmaProgramaOTP2.configuration_parameters
 
 
 def run(uuid=None, **params):
-    return FirmaProgramaOTP(uuid, **params).run()
+    return FirmaProgramaOTP2(uuid, **params).run()

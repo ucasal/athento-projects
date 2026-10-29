@@ -82,16 +82,11 @@ class UcasalServices:
         import logging
         nlogger = logging.getLogger("athentose")
 
-        nlogger.debug("nlogger - Enter register_in_blockchain")
-
-
-        #logger = cls.logger
-        logger.entry()
-        #TODO: validar parámetros
-                
+        nlogger.debug("nlogger - Enter register_in_blockchain")     
+        
         endpoint = UcasalConfig.stamps_svc_url()
         headers = {'Authorization': f'Bearer {auth_token}'}
-        #TODO: y el file_uuid, no se envía?
+        
         data = {
             'fileHash': hash,
             'callbackUrl': callback_url
@@ -100,18 +95,17 @@ class UcasalServices:
 
         request_info = str({'url':endpoint, 'json':data, 'headers':headers})
         
-        logger.debug(f"Llamando a requests.post con estos parametros: {request_info}")
+        nlogger.debug(f"Llamando a requests.post con estos parametros: {request_info}")
         
         response = requests.post(url=endpoint, json=data, headers=headers)
 
         rta = str(response.text)
-        logger.debug(f"Respuesta del servicio: {rta}")
+        nlogger.debug(f"Respuesta del servicio: {rta}")
 
         if response.status_code == requests.codes.ok:
-            return logger.exit(response.text)
-            #TODO: Manejar response?
+            return requests           
         else:
-            raise logger.exit(AthentoseError('Error inesperado registrando el hash en UCASAL/BFA: ' + response.reason), exc_info=True) 
+            raise AthentoseError('Error inesperado registrando el hash en UCASAL/BFA: ' + response.reason)
 
     @classmethod
     def notify_rejection(cls, auth_token:str, uuid:str, previous_uuid:str, reason:str)->str: #plataforma 
@@ -150,7 +144,9 @@ class UcasalServices:
         logger = cls.logger
         logger.entry()
         
-        endpoint = UcasalConfig.otp_validation_url_template().format(usuario=user, token=otp)
+        endpoint = UcasalConfig.otp_validation_url_template()
+        endpoint = endpoint.replace("{{usuario}}", str(user))
+        endpoint = endpoint.replace("{{token}}", str(otp))
         logger.debug(f"Endpoint: {endpoint}")
         headers = {}
         

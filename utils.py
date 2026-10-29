@@ -38,6 +38,7 @@ class TituloStates:
 
 class ProgramasStates:
     pendiente_validacion_doc = 'Pendiente de Validación Docente'
+    pendiente_firma_jc = 'Pendiente Firma Jefe de Carrera'
     pendiente_firma_otp = 'Pendiente de Firma OTP'
     pendiente_blockchain = 'Pendiente de Blockchain'
     fallo_blockchain = 'Fallo en Blockchain'
@@ -143,6 +144,15 @@ class UcasalConfig:
     @staticmethod
     def programas_change_state_svc_url()->str:
         return SAC.get_str('ucasal.programas.change_state_svc_url')
+
+    def get_url_api()->str:
+        return SAC.get_str('ucasal.url_api')
+
+    def get_user()->str:
+        return SAC.get_str('ucasal.user')
+
+    def get_password()->str:
+        return SAC.get_str('ucasal.password')
         
 
 def default_permissions(func):
