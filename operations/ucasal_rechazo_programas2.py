@@ -11,12 +11,12 @@ from datetime import datetime
 import pytz
 import requests
 
-class RechazaPrograma(DocumentOperation):
+class RechazaPrograma2(DocumentOperation):
     version = "1.0"
     name = _("Rechaza Programas")
     description = _("Rechaza un programa si aún no está firmado")
     configuration_parameters = {}
-    _logger: SpLogger = SpLogger("athentose", "RechazaProgramas")
+    _logger: SpLogger = SpLogger("athentose", "RechazaPrograma2s")
 
     # Estados desde los que se puede rechazar -> area a notificar
     AREA_BY_STATE = {
@@ -128,17 +128,17 @@ class RechazaPrograma(DocumentOperation):
                 exc_info=True,
             )
 
-VERSION = RechazaPrograma.version
-NAME = RechazaPrograma.name
-DESCRIPTION = RechazaPrograma.description
+VERSION = RechazaPrograma2.version
+NAME = RechazaPrograma2.name
+DESCRIPTION = RechazaPrograma2.description
 ORDER = 100
 CATEGORY = ""
 POSTLOAD = False
 POSTCHARACT = False
 POSTCLASSIF = False
 POSTEXTRACTION = False
-CONFIGURATION_PARAMETERS = RechazaPrograma.configuration_parameters
+CONFIGURATION_PARAMETERS = RechazaPrograma2.configuration_parameters
 
 
 def run(uuid=None, **params):
-    return RechazaPrograma(uuid, **params).run()
+    return RechazaPrograma2(uuid, **params).run()
