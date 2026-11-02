@@ -13,7 +13,7 @@ import requests
 
 class RechazaPrograma2(DocumentOperation):
     version = "1.0"
-    name = _("Rechaza Programas")
+    name = _("Rechaza Programas v2")
     description = _("Rechaza un programa si aún no está firmado")
     configuration_parameters = {}
     _logger: SpLogger = SpLogger("athentose", "RechazaPrograma2s")
