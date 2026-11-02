@@ -281,7 +281,7 @@ class FirmaProgramaOTP2(DocumentOperation):
             )
             flogger.entry("Enviando notificación de actualización de estado a UCASAL")
 
-            area = self.AREA_BY_STATE[estado_meta]
+            area = ProgramasStates.firmado
             op_send_by_email.run(
                 uuid,
                 notifications_template="programas_notificacion_firmada",
