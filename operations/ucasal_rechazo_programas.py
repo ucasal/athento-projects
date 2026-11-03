@@ -29,7 +29,7 @@ class RechazaPrograma(DocumentOperation):
         flogger: SpFeatureLogger = NullSpFeatureLogger()
         logger = self._logger
         logger.entry()
-
+        flogger.entry("Probando la actualizacion de archivos")
         fil = self.document
         uuid = str(fil.uuid)
         flogger: SpFeatureLogger = SpFeatureLogger.getLogger(fil)
