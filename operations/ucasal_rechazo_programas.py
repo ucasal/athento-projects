@@ -6,7 +6,7 @@ from django.utils.translation import gettext as _
 from django.http import HttpResponse
 from custom.sp_libs.python.logging import SpLogger, SpFeatureLogger, NullSpFeatureLogger
 from file.foperations import op_send_by_email
-from custom.ucasal2.utils import ProgramasStates
+from custom.ucasal2.utils import ProgramasStates, UcasalConfig
 from datetime import datetime
 import pytz
 import requests
