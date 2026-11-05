@@ -117,7 +117,7 @@ class FirmaTituloOTP4(DocumentOperation):
             fil_padre.set_feature("valide_otp", "1")
 
             # 2) Token, URL de validación del título y QR
-            flogger.entry("Obteniendo auth_token...")
+            flogger.entry("Obteniendo auth_token... v2")
             try:
                 auth_token = UcasalServices.get_auth_token(
                     user=UcasalConfig.token_svc_user(),
@@ -227,9 +227,9 @@ class FirmaTituloOTP4(DocumentOperation):
             signer = SpPdfSimpleSigner()
             documentos_firmados = []
 
-            fil_padre.change_life_cycle_state(TituloStates.pendiente_firma_otp, force_transition=True)
-            fil_padre.change_life_cycle_state(TituloStates.pendiente_blockchain, force_transition=True)
-            fil_padre.change_life_cycle_state(TituloStates.firmado, force_transition=True)
+            fil_padre.change_life_cycle_state(TituloStates.pendiente_firma_otp)
+            #fil_padre.change_life_cycle_state(TituloStates.pendiente_blockchain)
+            #fil_padre.change_life_cycle_state(TituloStates.firmado)
 
 
             # 4) Firmar ambos PDFs con el mismo QR/OTP
@@ -297,7 +297,7 @@ class FirmaTituloOTP4(DocumentOperation):
 
                         
             # 5) Registrar hashes de analítico y diploma en blockchain
-            logger.entry("Registrando hashes de analítico y diploma en blockchain")
+            logger.entry("Registrando hashes de analítico y diploma en blockchain v2")
             hash_analitico = get_pdf_hash(hijo_analitico)
             logger.entry(f"Hash analítico: {hash_analitico}")
             hash_diploma = get_pdf_hash(hijo_diploma)
@@ -367,7 +367,7 @@ class FirmaTituloOTP4(DocumentOperation):
             fil_padre.set_feature("hash_analitico", hash_analitico)
             fil_padre.set_feature("hash_diploma", hash_diploma)
 
-            #fil_padre.change_life_cycle_state(TituloStates.pendiente_blockchain, force_transition=True)
+            fil_padre.change_life_cycle_state(TituloStates.pendiente_blockchain)
             
             fil_padre.set_metadata(
                 "estado",
@@ -395,12 +395,12 @@ class FirmaTituloOTP4(DocumentOperation):
                     f"No se pudo notificar el estado firmado a UCASAL: {notif_err}"
                 )
 
-            #fil_padre.change_life_cycle_state(TituloStates.firmado, force_transition=True)
+            fil_padre.change_life_cycle_state(TituloStates.firmado)
             
 
             fil_padre.set_metadata("estado", TituloStates.firmado, overwrite=True)
             fil_padre.set_feature("registro_blockchain", "success")
-            flogger.entry("Ambos documentos firmados. Estado cambiado a 'Firmado'")            
+            flogger.entry("Ambos documentos firmados. Estado cambiado a 'Firmado' v2")            
 
             body_to_save = {
                 "fecha_firma": {"day": day, "month": month, "year": year},

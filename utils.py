@@ -36,14 +36,7 @@ class TituloStates:
     firmado = 'Firmado'
     rechazado = 'RECHAZADO'
 
-class ProgramasStates:
-    pendiente_validacion_doc = 'Pendiente de Validación Docente'
-    pendiente_firma_jc = 'Pendiente Firma Jefe de Carrera'
-    pendiente_firma_otp = 'Pendiente de Firma OTP'
-    pendiente_blockchain = 'Pendiente de Blockchain'
-    fallo_blockchain = 'Fallo en Blockchain'
-    firmado = 'Firmado'
-    rechazado = 'Rechazado'
+
 
 class UcasalConfig:
     @staticmethod
@@ -124,26 +117,7 @@ class UcasalConfig:
         return SAC.get_str('ucasal.titulo.approve_url')
 
 
-    # Programas
-    @staticmethod
-    def programas_bfaresponse_endpoint()->str:
-        return SAC.get_str('ucasal.programas.bfaresponse_endpoint')
-
-    @staticmethod
-    def programas_validation_url_template()->str:
-        return SAC.get_str('ucasal.programas.validation_url_template')
     
-    @staticmethod
-    def programas_approve_url()->str:
-        return SAC.get_str('ucasal.programas.approve_url')    
-
-    @staticmethod
-    def programas_rejection_url()->str:
-        return SAC.get_str('ucasal.programas.rejection_url')
-
-    @staticmethod
-    def programas_change_state_svc_url()->str:
-        return SAC.get_str('ucasal.programas.change_state_svc_url')
 
     def get_url_api()->str:
         return SAC.get_str('ucasal.url_api')
