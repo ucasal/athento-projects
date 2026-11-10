@@ -1,4 +1,4 @@
-from custom.ucasal2.endpoints import programas, titulos
+from custom.ucasal2.endpoints import titulos
 
 app_name = 'ucasal2'
 

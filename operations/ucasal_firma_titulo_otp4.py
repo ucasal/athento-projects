@@ -227,7 +227,7 @@ class FirmaTituloOTP4(DocumentOperation):
             signer = SpPdfSimpleSigner()
             documentos_firmados = []
 
-            fil_padre.change_life_cycle_state(TituloStates.pendiente_firma_otp)
+            fil_padre.change_life_cycle_state(TituloStates.pendiente_firma_otp, force_transition=True)
             #fil_padre.change_life_cycle_state(TituloStates.pendiente_blockchain)
             #fil_padre.change_life_cycle_state(TituloStates.firmado)
 
@@ -367,7 +367,7 @@ class FirmaTituloOTP4(DocumentOperation):
             fil_padre.set_feature("hash_analitico", hash_analitico)
             fil_padre.set_feature("hash_diploma", hash_diploma)
 
-            fil_padre.change_life_cycle_state(TituloStates.pendiente_blockchain)
+            fil_padre.change_life_cycle_state(TituloStates.pendiente_blockchain, force_transition=True)
             
             fil_padre.set_metadata(
                 "estado",
@@ -395,7 +395,7 @@ class FirmaTituloOTP4(DocumentOperation):
                     f"No se pudo notificar el estado firmado a UCASAL: {notif_err}"
                 )
 
-            fil_padre.change_life_cycle_state(TituloStates.firmado)
+            fil_padre.change_life_cycle_state(TituloStates.firmado, force_transition=True)
             
 
             fil_padre.set_metadata("estado", TituloStates.firmado, overwrite=True)

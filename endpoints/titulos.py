@@ -438,7 +438,7 @@ routes = [
     url(r'^titulos/(?P<uuid>[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/registerotp\/{0,1}$', registerotp),
     url(r'^titulos/(?P<uuid>[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/sendotp\/{0,1}$', sendotp),
     url(r'^titulos/(?P<uuid>[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/bfaresponse\/{0,1}$', bfaresponse),
-    url(r'^titulos/(?P<uuid>[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/reject\/{0,1}$', reject),
+    #url(r'^titulos/(?P<uuid>[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/reject\/{0,1}$', reject),
     url(r'^titulos/qr/{0,1}$', qr),
     url(r'^titulos/getconfig/{0,1}$', getconfig), #Comentar por seguridad
 ]

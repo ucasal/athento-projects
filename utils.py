@@ -116,7 +116,9 @@ class UcasalConfig:
     def titulo_approve_url()->str:
         return SAC.get_str('ucasal.titulo.approve_url')
 
-
+    @staticmethod
+    def titulo_rejection_url()->str:
+        return SAC.get_str('ucasal.titulo.rejection_url')
     
 
     def get_url_api()->str:
