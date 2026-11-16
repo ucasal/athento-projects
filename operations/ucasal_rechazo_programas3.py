@@ -94,11 +94,7 @@ class RechazaPrograma3(DocumentOperation):
             user = UcasalConfig.get_user()
             password = UcasalConfig.get_password()
             data = f'usuario={user}&clave={password}' 
-            response = requests.delete(url=url_api, data=data, headers=headers)
-
-            #envia a la papelera
-            fil.removed = True
-            fil.save()
+            response = requests.delete(url=url_api, data=data, headers=headers)            
 
             op_send_by_email.run(
                 uuid,
@@ -106,6 +102,11 @@ class RechazaPrograma3(DocumentOperation):
                 send_to_groups="Jefe de Carrera",
                 area=area,
             )
+
+            #envia a la papelera
+            fil.removed = True
+            fil.save()
+            
             return logger.exit(HttpResponse("Programa rechazado exitosamente"))
 
         except AthentoseError as e:
