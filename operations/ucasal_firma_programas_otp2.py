@@ -199,7 +199,7 @@ class FirmaProgramaOTP2(DocumentOperation):
                 qr_info = QRInfo(
                     image_path=qr_image_tmp_path,
                     image_text=qr_text,
-                    x=450,
+                    x=550,
                     y=11,
                     width=70,
                     height=70,
