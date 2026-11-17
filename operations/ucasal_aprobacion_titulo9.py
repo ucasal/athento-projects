@@ -41,6 +41,7 @@ class ApruebaTitulo9(DocumentOperation):
             # Pendiente de validacion DA -> FD -> FR -> TIT -> FSG
            
             flogger.entry(f"Response: {estado_meta}")
+            flogger.entry(f"Incorporando dto de Economia")
 
             if estado_meta == "Pendiente de validacion DA (direccion de alumnos)":
                 
@@ -89,6 +90,13 @@ class ApruebaTitulo9(DocumentOperation):
                         uuid,
                         notifications_template='titulos_notificacion_validacion',
                         send_to_groups='DECANO-SALUD',
+                        area='DEPARTAMENTO DE ALUMNOS'  
+                    )
+                if nombre_serie == 'titulos_economia' :    
+                    op_send_by_email.run(
+                        uuid,
+                        notifications_template='titulos_notificacion_validacion',
+                        send_to_groups='DECANO-ECONOMIA',
                         area='DEPARTAMENTO DE ALUMNOS'  
                     )    
 
