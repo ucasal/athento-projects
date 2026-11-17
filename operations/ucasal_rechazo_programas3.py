@@ -8,6 +8,7 @@ from custom.sp_libs.python.logging import SpLogger, SpFeatureLogger, NullSpFeatu
 from file.foperations import op_send_by_email
 from custom.ucasal2.utils import ProgramasStates, UcasalConfig
 from datetime import datetime
+import time
 import pytz
 import requests
 
@@ -111,6 +112,7 @@ class RechazaPrograma3(DocumentOperation):
 
         except AthentoseError as e:
             flogger.error(f"Error rechazando el programa: {e}")
+            time.sleep(5)   
             return logger.exit(
                 {
                     "msg_type": "error",
