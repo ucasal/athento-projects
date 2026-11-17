@@ -112,7 +112,7 @@ class RechazaPrograma3(DocumentOperation):
 
         except AthentoseError as e:
             flogger.error(f"Error rechazando el programa: {e}")
-            time.sleep(5)   
+            time.sleep(10)   
             return logger.exit(
                 {
                     "msg_type": "error",
@@ -123,6 +123,7 @@ class RechazaPrograma3(DocumentOperation):
 
         except Exception as e:  # noqa: BLE001
             flogger.error(f"Error inesperado rechazando el programa: {e}")
+            time.sleep(10)
             return logger.exit(
                 {
                     "msg_type": "error",
