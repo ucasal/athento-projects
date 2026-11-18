@@ -98,7 +98,43 @@ class ApruebaTitulo9(DocumentOperation):
                         notifications_template='titulos_notificacion_validacion',
                         send_to_groups='DECANO-ECONOMIA',
                         area='DEPARTAMENTO DE ALUMNOS'  
-                    )    
+                    )
+                if nombre_serie == 'titulos_artes_y_ciencias' :    
+                    op_send_by_email.run(
+                        uuid,
+                        notifications_template='titulos_notificacion_validacion',
+                        send_to_groups='DECANO-ARTES-Y-CIENCIAS',
+                        area='DEPARTAMENTO DE ALUMNOS'  
+                    )
+                if nombre_serie == 'titulos_ciencias_juridicas' :    
+                    op_send_by_email.run(
+                        uuid,
+                        notifications_template='titulos_notificacion_validacion',
+                        send_to_groups='DECANO-CIENCIAS-JURIDICAS',
+                        area='DEPARTAMENTO DE ALUMNOS'  
+                    )
+                if nombre_serie == 'titulos_arquitextura_y_urbanismo' :    
+                    op_send_by_email.run(
+                        uuid,
+                        notifications_template='titulos_notificacion_validacion',
+                        send_to_groups='DECANO-ARQUITEXTURA-Y-URBANISMO',
+                        area='DEPARTAMENTO DE ALUMNOS'  
+                    )
+                if nombre_serie == 'titulos_trabajo_social' :    
+                    op_send_by_email.run(
+                        uuid,
+                        notifications_template='titulos_notificacion_validacion',
+                        send_to_groups='DECANO-TRABAJO-SOCIAL',
+                        area='DEPARTAMENTO DE ALUMNOS'  
+                    )
+                if nombre_serie == 'titulos_educacion_fisica' :    
+                    op_send_by_email.run(
+                        uuid,
+                        notifications_template='titulos_notificacion_validacion',
+                        send_to_groups='DECANO-EDUCACION-FISICA',
+                        area='DEPARTAMENTO DE ALUMNOS'  
+                    )
+                   
 
                 return logger.exit(
                     {
