@@ -51,15 +51,7 @@ class RechazaPrograma3(DocumentOperation):
             # 2. Obtener motivo de rechazo
             motivo = str(fil.gmv("metadata.programas_motivo_rechazo") or "").strip()
             if motivo == "":
-                error = "Debe ingresar un motivo de rechazo para continuar."
-                logger.exit(
-                {
-                    "msg_type": "error",
-                    "msg": _("Debe ingresar un motivo de rechazo para continuar."+error),
-                },
-                exc_info=True,
-                )
-                time.sleep(5)
+                error = "Debe ingresar un motivo de rechazo para continuar."                
                 raise AthentoseError(error)
 
 
