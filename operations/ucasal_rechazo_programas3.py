@@ -106,8 +106,8 @@ class RechazaPrograma3(DocumentOperation):
             )
             time.sleep(4)
             #envia a la papelera
-            fil.removed = True
-            fil.save()
+            #fil.removed = True
+            #fil.save()
             
             return logger.exit(HttpResponse("Programa rechazado exitosamente"))
 
