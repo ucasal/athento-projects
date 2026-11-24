@@ -285,8 +285,8 @@ class FirmaProgramaOTP2(DocumentOperation):
             op_send_by_email.run(
                 uuid,
                 notifications_template="programas_notificacion_firmada",
-                send_to_groups="Jefe de Carrera",
-                area="Jefe de Carrera",
+                send_to_groups='Docentes',
+                area=area,
             )            
                         
 

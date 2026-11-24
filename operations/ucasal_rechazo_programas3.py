@@ -98,11 +98,10 @@ class RechazaPrograma3(DocumentOperation):
             data = f'usuario={user}&clave={password}' 
             response = requests.delete(url=url_api, data=data, headers=headers)            
 
-            op_send_by_email.run(
-                uuid,
+            op_send_by_email.run(uuid,
                 notifications_template="programas_notificacion_rechazo",
-                send_to_groups="Jefe de Carrera",
-                area="Jefe de Carrera",
+                send_to_groups='Docentes',
+                area=area,
             )
             time.sleep(4)
             #envia a la papelera
