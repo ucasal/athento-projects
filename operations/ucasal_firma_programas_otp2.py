@@ -286,7 +286,7 @@ class FirmaProgramaOTP2(DocumentOperation):
                 uuid,
                 notifications_template="programas_notificacion_firmada",
                 send_to_groups="Jefe de Carrera",
-                area=area,
+                area="Jefe de Carrera",
             )            
                         
 

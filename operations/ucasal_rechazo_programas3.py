@@ -102,7 +102,7 @@ class RechazaPrograma3(DocumentOperation):
                 uuid,
                 notifications_template="programas_notificacion_rechazo",
                 send_to_groups="Jefe de Carrera",
-                area=area,
+                area="Jefe de Carrera",
             )
             time.sleep(4)
             #envia a la papelera
