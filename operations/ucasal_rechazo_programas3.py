@@ -104,7 +104,7 @@ class RechazaPrograma3(DocumentOperation):
                 send_to_groups="Jefe de Carrera",
                 area=area,
             )
-
+            time.sleep(4)
             #envia a la papelera
             fil.removed = True
             fil.save()
