@@ -200,9 +200,9 @@ class FirmaProgramaOTP2(DocumentOperation):
                     image_path=qr_image_tmp_path,
                     image_text=qr_text,
                     x=460,
-                    y=11,
-                    width=70,
-                    height=70,
+                    y=20,
+                    width=60,
+                    height=60,
                 )
 
                 signed_result = signer.sign(
