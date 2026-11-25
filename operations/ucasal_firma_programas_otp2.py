@@ -200,7 +200,7 @@ class FirmaProgramaOTP2(DocumentOperation):
                     image_path=qr_image_tmp_path,
                     image_text=qr_text,
                     x=460,
-                    y=20,
+                    y=60,
                     width=60,
                     height=60,
                 )
