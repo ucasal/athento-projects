@@ -49,7 +49,7 @@ class RechazaPrograma3(DocumentOperation):
             area = self.AREA_BY_STATE[estado_meta]
 
             # 2. Obtener motivo de rechazo
-            motivo = str(fil.gmv("metadata.programas_motivo_rechazo") or "").strip()
+            motivo = str(fil.gmv("metadata.programas_motivo_de_rechazo") or "").strip()
             if motivo == "":
                 error = "Debe ingresar un motivo de rechazo para continuar."                
                 raise AthentoseError(error)
@@ -58,7 +58,7 @@ class RechazaPrograma3(DocumentOperation):
 
             # 3. Persistir motivo y cambiar estado a RECHAZADO
             fil.set_metadata(
-                "metadata.programas_motivo_rechazo",
+                "metadata.programas_motivo_de_rechazo",
                 motivo,
                 overwrite=True,
             )
