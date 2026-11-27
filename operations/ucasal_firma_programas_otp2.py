@@ -97,7 +97,7 @@ class FirmaProgramaOTP2(DocumentOperation):
             #Aqui estaba el code
             """
             mail_sg = usuario.email or ""
-            nombre_sg = f"{usuario.first_name or ''} {usuario.last_name or ''}".strip()
+            nombre_sg = f"{usuario.first_name or 'A'} {usuario.last_name or 'D'}".strip()
             if not mail_sg:
                 flogger.entry("El mail del usuario de Docentes no se pudo obtener")
                 raise AthentoseError(
